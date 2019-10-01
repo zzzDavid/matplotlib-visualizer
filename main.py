@@ -3,6 +3,7 @@ from typing import KeysView
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import random
+import os
 from colour import Color
 
 # dsp = 0, bram = 1, uram = 2
@@ -123,32 +124,53 @@ def drawBackGround(ax, width, height):
 
 
 if __name__ == "__main__":
+    filename = 'data/blockNum=480.xdc'
     # dict = readXDC("data/dsp_conv_chip_orig.xdc")
-    dict = readXDC('data/blockNum=480.xdc')
+    dict = readXDC(filename)
+    name = filename.split('/',1)[1].split('.',1)[0]
+    if not os.path.exists('data/'+ name):
+        os.makedirs('data/'+ name)
+
     # Set up sizes
     width = 1560
     height = 5414.4
 
-    # Create figure and axes
-    fig, ax = plt.subplots(1)
-    fig.set_size_inches(16, 55)
-    ax.set_xlim(0, width + 20)
-    ax.set_ylim(0, height + 20)
-
-    # Create a Rectangle Patch
-    rect = patches.Rectangle((10, 10), 1560, 5414.4, linewidth=1,  facecolor='#dddddd')
-    ax.add_patch(rect)
-
-    drawBackGround(ax, width, height)
-
-
     keys = list(dict.keys())
     red = Color("red")
-    colors = list(red.range_to(Color("green"), len(keys)))
+    # colors = list(red.range_to(Color("green"), len(keys)))
     for i in range(len(keys)):
+
+        # color = colors[i].get_rgb()
+        color = Color('red').get_rgb()
+        # Create figure and axes
+        fig, ax = plt.subplots(1)
+        fig.set_size_inches(16, 55)
+        ax.set_xlim(0, width + 20)
+        ax.set_ylim(0, height + 20)
+
+        # Create a Rectangle Patch
+        rect = patches.Rectangle((10, 10), 1560, 5414.4, linewidth=1, facecolor='#dddddd')
+        ax.add_patch(rect)
+
+        drawBackGround(ax, width, height)
+
+        # draw un-highlighted blocks
+        for j in range (len(keys)):
+            key = keys[j]
+            entries = dict.get(key)
+            for pair in entries:
+                site = pair[0]
+                cell = pair[1]
+                if site.startswith('DSP'):
+                    drawDSP(ax, site, '#ffdc6a')
+                elif site.startswith('RAMB'):
+                    drawBRAM(ax, site, '#00c07f')
+                elif site.startswith('URAM'):
+                    drawURAM(ax, site, '#bf4aa8')
+
+        # draw the highlighted block
         key = keys[i]
         entries = dict.get(key)
-        color = colors[i].get_rgb()
         for pair in entries:
             site = pair[0]
             cell = pair[1]
@@ -162,6 +184,6 @@ if __name__ == "__main__":
                 drawURAM(ax, site, color)  # ''#bf4aa8''
                 # drawURAM(ax, site, '#bf4aa8')
 
-    # plt.show()
-    plt.savefig('data/visualize.png')
-    plt.close()
+        # plt.show()
+        plt.savefig('data/{}/visualize-{}.png'.format(name,i))
+        plt.close()
